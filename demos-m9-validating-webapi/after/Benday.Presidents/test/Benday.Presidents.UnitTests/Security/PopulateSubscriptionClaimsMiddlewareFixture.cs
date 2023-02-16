@@ -1,147 +1,143 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Benday.Presidents.WebUi;
 using Benday.Presidents.WebUi.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Benday.Presidents.UnitTests.Security
+namespace Benday.Presidents.UnitTests.Security;
+
+[TestClass]
+public class PopulateSubscriptionClaimsMiddlewareFixture
 {
-    [TestClass]
-    public class PopulateSubscriptionClaimsMiddlewareFixture
+    [TestInitialize]
+    public void OnTestInitialize()
     {
-        [TestInitialize]
-        public void OnTestInitialize()
-        {
-            _SystemUnderTest = null;
-            _SubscriptionServiceInstance = null;
-        }
+        _SystemUnderTest = null;
+        _SubscriptionServiceInstance = null;
+    }
 
-        private PopulateSubscriptionClaimsMiddleware _SystemUnderTest;
-        public PopulateSubscriptionClaimsMiddleware SystemUnderTest
+    private PopulateSubscriptionClaimsMiddleware _SystemUnderTest;
+    public PopulateSubscriptionClaimsMiddleware SystemUnderTest
+    {
+        get
         {
-            get
+            if (_SystemUnderTest == null)
             {
-                if (_SystemUnderTest == null)
-                {
-                    _SystemUnderTest = 
-                        new PopulateSubscriptionClaimsMiddleware(
-                            SubscriptionServiceInstance
-                        );
-                }
-
-                return _SystemUnderTest;
+                _SystemUnderTest =
+                    new PopulateSubscriptionClaimsMiddleware(
+                        SubscriptionServiceInstance
+                    );
             }
-        }
 
-        private MockSubscriptionService _SubscriptionServiceInstance;
-        public MockSubscriptionService SubscriptionServiceInstance
+            return _SystemUnderTest;
+        }
+    }
+
+    private MockSubscriptionService _SubscriptionServiceInstance;
+    public MockSubscriptionService SubscriptionServiceInstance
+    {
+        get
         {
-            get
+            if (_SubscriptionServiceInstance == null)
             {
-                if (_SubscriptionServiceInstance == null)
-                {
-                    _SubscriptionServiceInstance = new MockSubscriptionService();
-                }
-
-                return _SubscriptionServiceInstance;
+                _SubscriptionServiceInstance = new MockSubscriptionService();
             }
+
+            return _SubscriptionServiceInstance;
         }
+    }
 
 
-        [TestMethod]
-        public async Task SubscriptionClaimIsNotAddedWhenUserIsNotAuthenticated()
-        {
-            DefaultHttpContext httpContext = GetHttpContextForAnonymousUser();
+    [TestMethod]
+    public async Task SubscriptionClaimIsNotAddedWhenUserIsNotAuthenticated()
+    {
+        DefaultHttpContext httpContext = GetHttpContextForAnonymousUser();
 
-            // act
-            await SystemUnderTest.InvokeAsync(httpContext, GetDoNothingNextDelegate());
+        // act
+        await SystemUnderTest.InvokeAsync(httpContext, GetDoNothingNextDelegate());
 
-            // assert
-            Assert.AreEqual<int>(0, httpContext.User.Claims.Count(), "Claim count should be zero.");
-        }
+        // assert
+        Assert.AreEqual<int>(0, httpContext.User.Claims.Count(), "Claim count should be zero.");
+    }
 
-        [TestMethod]
-        public async Task SubscriptionClaimIsNotAddedWhenSubscriptionDoesNotExistForUser()
-        {
-            // arrange
-            var httpContext = GetHttpContextForAuthenticatedUser();
+    [TestMethod]
+    public async Task SubscriptionClaimIsNotAddedWhenSubscriptionDoesNotExistForUser()
+    {
+        // arrange
+        var httpContext = GetHttpContextForAuthenticatedUser();
 
-            // act
-            await SystemUnderTest.InvokeAsync(httpContext, GetDoNothingNextDelegate());
+        // act
+        await SystemUnderTest.InvokeAsync(httpContext, GetDoNothingNextDelegate());
 
-            // assert
-            Assert.AreEqual<int>(1, httpContext.User.Claims.Count(), "Claim count should be zero.");
-        }
+        // assert
+        Assert.AreEqual<int>(1, httpContext.User.Claims.Count(), "Claim count should be zero.");
+    }
 
-        [TestMethod]
-        public async Task SubscriptionClaimIsAddedWhenSubscriptionExists()
-        {
-            // arrange
-            string expectedSubscriptionType = SecurityConstants.SubscriptionType_Ultimate;
+    [TestMethod]
+    public async Task SubscriptionClaimIsAddedWhenSubscriptionExists()
+    {
+        // arrange
+        string expectedSubscriptionType = SecurityConstants.SubscriptionType_Ultimate;
 
-            SubscriptionServiceInstance.SubscriptionTypeReturnValue =
-                expectedSubscriptionType;
+        SubscriptionServiceInstance.SubscriptionTypeReturnValue =
+            expectedSubscriptionType;
 
-            DefaultHttpContext httpContext =
-                GetHttpContextForAuthenticatedUser();
+        DefaultHttpContext httpContext =
+            GetHttpContextForAuthenticatedUser();
 
-            // act
-            await SystemUnderTest.InvokeAsync(
-                httpContext, GetDoNothingNextDelegate());
+        // act
+        await SystemUnderTest.InvokeAsync(
+            httpContext, GetDoNothingNextDelegate());
 
-            // assert
-            Assert.AreEqual<int>(2, httpContext.User.Claims.Count(), "Claim count should be 2.");
+        // assert
+        Assert.AreEqual<int>(2, httpContext.User.Claims.Count(), "Claim count should be 2.");
 
-            var subscriptionClaim =
-                httpContext.User.Claims.Where(
-                    c => c.Type == SecurityConstants.Claim_SubscriptionType).FirstOrDefault();
+        var subscriptionClaim =
+            httpContext.User.Claims.Where(
+                c => c.Type == SecurityConstants.Claim_SubscriptionType).FirstOrDefault();
 
-            Assert.IsNotNull(subscriptionClaim, "Should have a subscription claim.");
+        Assert.IsNotNull(subscriptionClaim, "Should have a subscription claim.");
 
-            Assert.AreEqual<string>(
-                expectedSubscriptionType,
-                subscriptionClaim.Value,
-                "Subscription type was wrong.");
-        }
+        Assert.AreEqual<string>(
+            expectedSubscriptionType,
+            subscriptionClaim.Value,
+            "Subscription type was wrong.");
+    }
 
-        private DefaultHttpContext GetHttpContextForAuthenticatedUser()
-        {
-            var httpContext = new DefaultHttpContext();
+    private DefaultHttpContext GetHttpContextForAuthenticatedUser()
+    {
+        var httpContext = new DefaultHttpContext();
 
-            var claims = new List<Claim>();
+        var claims = new List<Claim>();
 
-            claims.Add(new Claim(
-                ClaimTypes.Name, "test user"));
+        claims.Add(new Claim(
+            ClaimTypes.Name, "test user"));
 
-            var identity = new ClaimsIdentity(claims);
+        var identity = new ClaimsIdentity(claims);
 
-            httpContext.User = new ClaimsPrincipal(identity);
+        httpContext.User = new ClaimsPrincipal(identity);
 
-            return httpContext;
-        }
+        return httpContext;
+    }
 
-        private DefaultHttpContext GetHttpContextForAnonymousUser()
-        {
-            // arrange
-            var httpContext = new DefaultHttpContext();
+    private DefaultHttpContext GetHttpContextForAnonymousUser()
+    {
+        // arrange
+        var httpContext = new DefaultHttpContext();
 
-            httpContext.User = new ClaimsPrincipal();
-            return httpContext;
-        }
+        httpContext.User = new ClaimsPrincipal();
+        return httpContext;
+    }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        private async Task DoNothing(HttpContext context)
+    private async Task DoNothing(HttpContext context)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
+    {
 
-        }
+    }
 
-        private RequestDelegate GetDoNothingNextDelegate()
-        {
-            return new RequestDelegate(DoNothing);
-        }
+    private RequestDelegate GetDoNothingNextDelegate()
+    {
+        return new RequestDelegate(DoNothing);
     }
 }

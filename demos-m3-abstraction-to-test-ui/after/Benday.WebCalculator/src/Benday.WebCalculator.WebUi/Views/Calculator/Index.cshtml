@@ -14,39 +14,39 @@
         <div class="col-md-4">
             <form asp-action="View">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <div class="form-group">
-                    <label asp-for="Value1" class="control-label"></label>
+                <div>
+                    <label asp-for="Value1" class="form-label"></label>
                     <input asp-for="Value1" class="form-control" />
                     <span asp-validation-for="Value1" class="text-danger"></span>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Operator" class="control-label"></label>
-                    <select asp-for="Operator" asp-items="Model.Operators" class="form-control"></select>
+                <div>
+                    <label asp-for="Operator" class="form-label"></label>
+                    <select asp-for="Operator" asp-items="Model.Operators" class="form-select"></select>
                     <span asp-validation-for="Operator" class="text-danger"></span>
                 </div>
                 
-                <div class="form-group">
-                    <label asp-for="Value2" class="control-label"></label>
+                <div>
+                    <label asp-for="Value2" class="form-label"></label>
                     <input asp-for="Value2" class="form-control" />
                     <span asp-validation-for="Value2" class="text-danger"></span>
                 </div>
 
-                <div class="form-group">
-                    <input type="submit" value="Calculate" class="btn btn-default" />
+                <div>
+                    <input type="submit" value="Calculate" class="btn btn-primary" />
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="ResultValue" class="control-label"></label>
+                <div>
+                    <label asp-for="ResultValue" class="form-label"></label>
                     @Html.DisplayFor(x => x.ResultValue)
                     <span asp-validation-for="ResultValue" class="text-danger"></span>
                 </div>
-                <div class="form-group">
-                    <label asp-for="Message" class="control-label"></label>
+                <div>
+                    <label asp-for="Message" class="form-label"></label>
                     @Html.DisplayFor(x => x.Message)
                 </div>
-                <div class="form-group">
-                    <label asp-for="IsResultValid" class="control-label"></label>: @Model.IsResultValid
+                <div>
+                    <label asp-for="IsResultValid" class="form-label"></label>: @Model.IsResultValid
                 </div>
             </form>
         </div>

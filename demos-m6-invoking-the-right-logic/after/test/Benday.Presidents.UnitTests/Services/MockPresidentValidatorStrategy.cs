@@ -1,23 +1,18 @@
-using System;
-using System.Linq;
-using Benday.Presidents.Api.Services;
-using System.Collections.Generic;
 using Benday.Presidents.Api.Models;
 
-namespace Benday.Presidents.UnitTests.Services
+namespace Benday.Presidents.UnitTests.Services;
+
+public class MockPresidentValidatorStrategy : IValidatorStrategy<President>
 {
-    public class MockPresidentValidatorStrategy : IValidatorStrategy<President>
+    public MockPresidentValidatorStrategy()
     {
-        public MockPresidentValidatorStrategy()
-        {
-            IsValidReturnValue = true;
-        }
+        IsValidReturnValue = true;
+    }
 
-        public bool IsValidReturnValue { get; set; }
+    public bool IsValidReturnValue { get; set; }
 
-        public bool IsValid(President validateThis)
-        {
-            return IsValidReturnValue;
-        }
+    public bool IsValid(President validateThis)
+    {
+        return IsValidReturnValue;
     }
 }

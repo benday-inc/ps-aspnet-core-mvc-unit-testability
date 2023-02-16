@@ -1,36 +1,32 @@
 ﻿using Benday.Presidents.Api.Interfaces;
-using Benday.Presidents.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using ILogger = Benday.Presidents.Api.Services.ILogger;
 
-namespace Benday.Presidents.WebUI.Controllers
+namespace Benday.Presidents.WebUI.Controllers;
+
+public class FeedbackController : Controller
 {
-    public class FeedbackController : Controller
+    private ILogger _Logger;
+    private IFeatureManager _FeatureManager;
+
+    public FeedbackController(ILogger logger, IFeatureManager featureManager)
     {
-        private ILogger _Logger;
-        private IFeatureManager _FeatureManager;
+        if (logger == null)
+            throw new ArgumentNullException("logger", "logger is null.");
+        if (featureManager == null)
+            throw new ArgumentNullException("featureManager", "featureManager is null.");
 
-        public FeedbackController(ILogger logger, IFeatureManager featureManager)
+        _Logger = logger;
+        _FeatureManager = featureManager;
+    }
+
+    public JsonResult SubmitFeedback(string id)
+    {
+        if (_FeatureManager.CustomerSatisfaction == true)
         {
-            if (logger == null)
-                throw new ArgumentNullException("logger", "logger is null.");
-            if (featureManager == null)
-                throw new ArgumentNullException("featureManager", "featureManager is null.");
-
-            _Logger = logger;
-            _FeatureManager = featureManager;
+            _Logger.LogCustomerSatisfaction(id);
         }
 
-        public JsonResult SubmitFeedback(string id)
-        {
-            if (_FeatureManager.CustomerSatisfaction == true)
-            {
-                _Logger.LogCustomerSatisfaction(id);
-            }
-
-            return Json(true);
-        }
+        return Json(true);
     }
 }

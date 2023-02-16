@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+namespace Benday.Presidents.Api.Interfaces;
 
-namespace Benday.Presidents.Api.Interfaces
+public interface IFeatureManager
 {
-    public interface IFeatureManager
-    {
-        bool Search { get; }
+    bool Search { get; }
 
-        bool SearchByBirthDeathState { get; }
+    bool SearchByBirthDeathState { get; }
 
-        bool FeatureUsageLogging { get; }
+    bool FeatureUsageLogging { get; }
 
-        bool CustomerSatisfaction { get; }
-    }
+    bool CustomerSatisfaction { get; }
 }

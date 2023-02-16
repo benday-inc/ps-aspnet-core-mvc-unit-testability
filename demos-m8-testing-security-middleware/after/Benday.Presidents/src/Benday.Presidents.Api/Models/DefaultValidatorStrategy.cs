@@ -1,34 +1,32 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Benday.Presidents.Api.Models
+namespace Benday.Presidents.Api.Models;
+
+public class DefaultValidatorStrategy<T> : IValidatorStrategy<T>
 {
-    public class DefaultValidatorStrategy<T> : IValidatorStrategy<T>
+    public bool IsValid(T validateThis)
     {
-        public bool IsValid(T validateThis)
+        var results = Validate(validateThis);
+
+        if (results.Count == 0)
         {
-            var results = Validate(validateThis);
-
-            if (results.Count == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
         }
-
-        private IList<ValidationResult> Validate(T model)
+        else
         {
-            var results = new List<ValidationResult>();
-
-            var context = new ValidationContext(model);
-
-            Validator.TryValidateObject(
-                model, context, results, true);
-
-            return results;
+            return false;
         }
+    }
+
+    private IList<ValidationResult> Validate(T model)
+    {
+        var results = new List<ValidationResult>();
+
+        var context = new ValidationContext(model);
+
+        Validator.TryValidateObject(
+            model, context, results, true);
+
+        return results;
     }
 }

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
+namespace Benday.Presidents.Api.Models;
 
-namespace Benday.Presidents.Api.Models
+public interface IValidatorStrategy<T>
 {
-    public interface IValidatorStrategy<T>
-    {
-        bool IsValid(T validateThis);
-    }
+    bool IsValid(T validateThis);
 }

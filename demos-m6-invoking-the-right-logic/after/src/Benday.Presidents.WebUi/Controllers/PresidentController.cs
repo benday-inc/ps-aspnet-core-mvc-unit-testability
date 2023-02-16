@@ -1,174 +1,166 @@
-﻿using Benday.Presidents.Common;
-using Benday.Presidents.Api;
+﻿using Benday.Presidents.Api;
 using Benday.Presidents.Api.Models;
 using Benday.Presidents.Api.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Hosting;
 
-namespace Benday.Presidents.WebUI.Controllers
+namespace Benday.Presidents.WebUI.Controllers;
+
+public class PresidentController : Controller
 {
-    public class PresidentController : Controller
+    private const int ID_FOR_CREATE_NEW_PRESIDENT = 0;
+    private IPresidentService _Service;
+    private IValidatorStrategy<President> _Validator;
+    private ITestDataUtility _TestDataUtility;
+
+    public PresidentController(IPresidentService service,
+        IValidatorStrategy<President> validator,
+        ITestDataUtility testDataUtility
+        )
     {
-        private const int ID_FOR_CREATE_NEW_PRESIDENT = 0;
-        private IPresidentService _Service;
-        private IValidatorStrategy<President> _Validator;
-        private ITestDataUtility _TestDataUtility;
+        if (service == null)
+            throw new ArgumentNullException("service", "service is null.");
 
-        public PresidentController(IPresidentService service,
-            IValidatorStrategy<President> validator,
-            ITestDataUtility testDataUtility
-            )
+        if (validator == null)
         {
-            if (service == null)
-                throw new ArgumentNullException("service", "service is null.");
-
-            if (validator == null)
-            {
-                throw new ArgumentNullException("validator", "Argument cannot be null.");
-            }
-
-            _Validator = validator;
-            _Service = service;
-            _TestDataUtility = testDataUtility;
+            throw new ArgumentNullException("validator", "Argument cannot be null.");
         }
 
-        public ActionResult Index()
-        {
-            var presidents = _Service.GetPresidents();
+        _Validator = validator;
+        _Service = service;
+        _TestDataUtility = testDataUtility;
+    }
 
-            return View(presidents);
+    public ActionResult Index()
+    {
+        var presidents = _Service.GetPresidents();
+
+        return View(presidents);
+    }
+
+    [Route("/[controller]/[action]/{id}")]
+    [Route("/president/{id}.aspx")]
+    public ActionResult Details(int? id)
+    {
+        if (id == null || id.HasValue == false)
+        {
+            return new BadRequestResult();
         }
 
-        [Route("/[controller]/[action]/{id}")]
-        [Route("/president/{id}.aspx")]
-        public ActionResult Details(int? id)
+        var president = _Service.GetPresidentById(id.Value);
+
+        if (president == null)
         {
-            if (id == null || id.HasValue == false)
-            {
-                return new BadRequestResult();
-            }
-
-            var president = _Service.GetPresidentById(id.Value);
-
-            if (president == null)
-            {
-                return NotFound();
-            }
-
-            return View(president);
+            return NotFound();
         }
 
-        [Route("/president/{last:alpha}/{first:alpha}")]
-        public ActionResult Details(string last, string first)
+        return View(president);
+    }
+
+    [Route("/president/{last:alpha}/{first:alpha}")]
+    public ActionResult Details(string last, string first)
+    {
+        if (String.IsNullOrWhiteSpace(last) == true ||
+            String.IsNullOrWhiteSpace(first) == true)
         {
-            if (String.IsNullOrWhiteSpace(last) == true ||
-                String.IsNullOrWhiteSpace(first) == true)
-            {
-                return new BadRequestResult();
-            }
-
-            var president = _Service.Search(
-                first, last).FirstOrDefault();
-
-            if (president == null)
-            {
-                return NotFound();
-            }
-
-            return View("Details", president);
+            return new BadRequestResult();
         }
 
-        public ActionResult Create()
+        var president = _Service.Search(
+            first, last).FirstOrDefault();
+
+        if (president == null)
         {
-            return RedirectToAction("Edit", new { id = ID_FOR_CREATE_NEW_PRESIDENT });
+            return NotFound();
         }
 
-        public ActionResult Edit(int? id)
+        return View("Details", president);
+    }
+
+    public ActionResult Create()
+    {
+        return RedirectToAction("Edit", new { id = ID_FOR_CREATE_NEW_PRESIDENT });
+    }
+
+    public ActionResult Edit(int? id)
+    {
+        if (id == null)
         {
-            if (id == null)
-            {
-                return new BadRequestResult();
-            }
+            return new BadRequestResult();
+        }
 
-            President president;
+        President president;
 
-            if (id.Value == ID_FOR_CREATE_NEW_PRESIDENT)
+        if (id.Value == ID_FOR_CREATE_NEW_PRESIDENT)
+        {
+            // create new
+            president = new President();
+            president.AddTerm(PresidentsConstants.President,
+                default(DateTime),
+                default(DateTime), 0);
+        }
+        else
+        {
+            president = _Service.GetPresidentById(id.Value);
+        }
+
+        if (president == null)
+        {
+            return NotFound();
+        }
+
+        return View(president);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Edit(President president)
+    {
+        if (_Validator.IsValid(president) == true)
+        {
+            bool isCreateNew = false;
+
+            if (president.Id == ID_FOR_CREATE_NEW_PRESIDENT)
             {
-                // create new
-                president = new President();
-                president.AddTerm(PresidentsConstants.President,
-                    default(DateTime),
-                    default(DateTime), 0);
+                isCreateNew = true;
             }
             else
             {
-                president = _Service.GetPresidentById(id.Value);
+                President toValue =
+                    _Service.GetPresidentById(president.Id);
+
+                if (toValue == null)
+                {
+                    return new BadRequestObjectResult(
+                        String.Format("Unknown president id '{0}'.", president.Id));
+                }
             }
 
-            if (president == null)
+            _Service.Save(president);
+
+            if (isCreateNew == true)
             {
-                return NotFound();
+                RedirectToAction("Edit", new { id = president.Id });
             }
-
-            return View(president);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(President president)
-        {
-            if (_Validator.IsValid(president) == true)
+            else
             {
-                bool isCreateNew = false;
-
-                if (president.Id == ID_FOR_CREATE_NEW_PRESIDENT)
-                {
-                    isCreateNew = true;
-                }
-                else
-                {
-                    President toValue =
-                        _Service.GetPresidentById(president.Id);
-
-                    if (toValue == null)
-                    {
-                        return new BadRequestObjectResult(
-                            String.Format("Unknown president id '{0}'.", president.Id));
-                    }
-                }
-
-                _Service.Save(president);
-
-                if (isCreateNew == true)
-                {
-                    RedirectToAction("Edit", new { id = president.Id });
-                }
-                else
-                {
-                    return RedirectToAction("Edit");
-                }
+                return RedirectToAction("Edit");
             }
-
-            return View(president);
         }
 
-        public ActionResult ResetDatabase()
-        {
-            _TestDataUtility.CreatePresidentTestData();
+        return View(president);
+    }
 
-            return RedirectToAction("Index");
-        }
+    public ActionResult ResetDatabase()
+    {
+        _TestDataUtility.CreatePresidentTestData();
 
-        public ActionResult VerifyDatabaseIsPopulated()
-        {
-            _TestDataUtility.VerifyDatabaseIsPopulated();
+        return RedirectToAction("Index");
+    }
 
-            return RedirectToAction("Index");
-        }
+    public ActionResult VerifyDatabaseIsPopulated()
+    {
+        _TestDataUtility.VerifyDatabaseIsPopulated();
+
+        return RedirectToAction("Index");
     }
 }

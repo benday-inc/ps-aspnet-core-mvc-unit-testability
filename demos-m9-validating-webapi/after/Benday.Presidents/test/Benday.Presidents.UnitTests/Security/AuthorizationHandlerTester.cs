@@ -5,13 +5,10 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
-namespace Benday.Presidents.UnitTests.Security
-{
+namespace Benday.Presidents.UnitTests.Security;
+
     public class AuthorizationHandlerTester<TRequirement, THandler>
         where
             TRequirement : IAuthorizationRequirement
@@ -122,4 +119,3 @@ namespace Benday.Presidents.UnitTests.Security
             return context;
         }        
     }
-}

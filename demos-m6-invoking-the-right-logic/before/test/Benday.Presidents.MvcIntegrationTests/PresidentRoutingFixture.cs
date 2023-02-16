@@ -1,43 +1,37 @@
-using Benday.Presidents.WebUI.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 
-namespace Benday.Presidents.MvcIntegrationTests
+namespace Benday.Presidents.MvcIntegrationTests;
+
+[TestClass]
+public class PresidentRoutingFixture
 {
-    [TestClass]
-    public class PresidentRoutingFixture
+    private WebApplicationFactory<Program> _SystemUnderTest;
+    internal WebApplicationFactory<Program> SystemUnderTest
     {
-        private WebApplicationFactory<Benday.Presidents.WebUi.Startup> _SystemUnderTest;
-        public WebApplicationFactory<Benday.Presidents.WebUi.Startup> SystemUnderTest
+        get
         {
-            get
+            if (_SystemUnderTest == null)
             {
-                if (_SystemUnderTest == null)
-                {
-                    _SystemUnderTest =
-                        new WebApplicationFactory<Benday.Presidents.WebUi.Startup>();
-                }
-
-                return _SystemUnderTest;
+                _SystemUnderTest =
+                    new WebApplicationFactory<Program>();
             }
+
+            return _SystemUnderTest;
         }
+    }
 
-        private async Task PopulateTestData()
-        {
-            var client = SystemUnderTest.CreateDefaultClient();
+    private async Task PopulateTestData()
+    {
+        var client = SystemUnderTest.CreateDefaultClient();
 
-            var response = await client.GetAsync("/president/VerifyDatabaseIsPopulated");
+        var response = await client.GetAsync("/president/VerifyDatabaseIsPopulated");
 
-            Assert.IsNotNull(response, "Response was null.");
+        Assert.IsNotNull(response, "Response was null.");
 
-            int statusCodeAsInt = (int)response.StatusCode;
+        int statusCodeAsInt = (int)response.StatusCode;
 
-            Assert.IsTrue(statusCodeAsInt < 400,
-                "Got an error response from populating test data.");
-        }
+        Assert.IsTrue(statusCodeAsInt < 400,
+            "Got an error response from populating test data.");
     }
 }

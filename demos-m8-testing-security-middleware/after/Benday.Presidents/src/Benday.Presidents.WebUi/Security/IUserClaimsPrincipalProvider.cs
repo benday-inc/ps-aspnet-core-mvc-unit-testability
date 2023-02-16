@@ -1,9 +1,8 @@
 using System.Security.Claims;
 
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public interface IUserClaimsPrincipalProvider
 {
-    public interface IUserClaimsPrincipalProvider
-    {
-        ClaimsPrincipal GetUser();
-    }
+    ClaimsPrincipal GetUser();
 }

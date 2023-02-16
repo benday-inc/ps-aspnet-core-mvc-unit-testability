@@ -1,92 +1,88 @@
-﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Linq;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Security.Principal;
 
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public class SecurityUtility
 {
-    public class SecurityUtility
+    private ClaimsIdentity _Identity;
+    private IPrincipal _Principal;
+
+    public SecurityUtility(IIdentity identity, IPrincipal principal)
     {
-        private ClaimsIdentity _Identity;
-        private IPrincipal _Principal;
+        if (principal == null)
+            throw new ArgumentNullException("principal", "principal is null.");
+        if (identity == null)
+            throw new ArgumentNullException("identity", "identity is null.");
 
-        public SecurityUtility(IIdentity identity, IPrincipal principal)
+        _Identity = identity as ClaimsIdentity;
+        _Principal = principal;
+    }
+
+    public bool IsInRole(string role)
+    {
+        if (_Principal == null)
         {
-            if (principal == null)
-                throw new ArgumentNullException("principal", "principal is null.");
-            if (identity == null)
-                throw new ArgumentNullException("identity", "identity is null.");
-
-            _Identity = identity as ClaimsIdentity;
-            _Principal = principal;
+            return false;
         }
-
-        public bool IsInRole(string role)
+        else
         {
-            if (_Principal == null)
+            return _Principal.IsInRole(role);
+        }
+    }
+
+    public bool IsAuthorized(string permissionName, int id)
+    {
+        if (_Identity == null)
+        {
+            return false;
+        }
+        else
+        {
+            if (IsAuthorized(SecurityConstants.RoleName_Admin) == true)
             {
-                return false;
+                return true;
             }
             else
             {
-                return _Principal.IsInRole(role);
+                return _Identity.HasClaim(permissionName, id.ToString());
             }
         }
+    }
 
-        public bool IsAuthorized(string permissionName, int id)
+    public bool IsAuthorized(string roleName)
+    {
+        if (_Identity == null)
         {
-            if (_Identity == null)
-            {
-                return false;
-            }
-            else
-            {
-                if (IsAuthorized(SecurityConstants.RoleName_Admin) == true)
-                {
-                    return true;
-                }
-                else
-                {
-                    return _Identity.HasClaim(permissionName, id.ToString());
-                }
-            }
+            return false;
         }
-
-        public bool IsAuthorized(string roleName)
+        else
         {
-            if (_Identity == null)
-            {
-                return false;
-            }
-            else
-            {
-                return _Identity.HasClaim(ClaimTypes.Role, roleName);
-            }
+            return _Identity.HasClaim(ClaimTypes.Role, roleName);
         }
+    }
 
-        public bool HasClaim(string claimType, string claimValue)
+    public bool HasClaim(string claimType, string claimValue)
+    {
+        if (_Identity == null)
         {
-            if (_Identity == null)
-            {
-                return false;
-            }
-            else
-            {
-                return _Identity.HasClaim(claimType, claimValue);
-            }
+            return false;
         }
-
-        public bool HasClaim(string claimType)
+        else
         {
-            if (_Identity == null)
-            {
-                return false;
-            }
-            else
-            {
-                return _Identity.HasClaim(c => c.Type == claimType);
-            }
+            return _Identity.HasClaim(claimType, claimValue);
+        }
+    }
+
+    public bool HasClaim(string claimType)
+    {
+        if (_Identity == null)
+        {
+            return false;
+        }
+        else
+        {
+            return _Identity.HasClaim(c => c.Type == claimType);
         }
     }
 }

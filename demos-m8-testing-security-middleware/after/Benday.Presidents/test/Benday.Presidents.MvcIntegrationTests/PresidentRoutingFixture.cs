@@ -14,15 +14,15 @@ namespace Benday.Presidents.MvcIntegrationTests
     [TestClass]
     public class PresidentRoutingFixture
     {
-        private WebApplicationFactory<Benday.Presidents.WebUi.Startup> _SystemUnderTest;
-        public WebApplicationFactory<Benday.Presidents.WebUi.Startup> SystemUnderTest
+        private WebApplicationFactory<Program> _SystemUnderTest;
+        internal WebApplicationFactory<Program> SystemUnderTest
         {
             get
             {
                 if (_SystemUnderTest == null)
                 {
                     _SystemUnderTest =
-                        new WebApplicationFactory<Benday.Presidents.WebUi.Startup>();
+                        new WebApplicationFactory<Program>();
                 }
 
                 return _SystemUnderTest;
@@ -47,7 +47,7 @@ namespace Benday.Presidents.MvcIntegrationTests
         {
             var client = SystemUnderTest.CreateDefaultClient();
             
-            var hostServices = SystemUnderTest.Server.Host.Services;
+            var hostServices = SystemUnderTest.Services;
 
             var scopeFactory = hostServices.GetService(
                 typeof(IServiceScopeFactory)) as IServiceScopeFactory;

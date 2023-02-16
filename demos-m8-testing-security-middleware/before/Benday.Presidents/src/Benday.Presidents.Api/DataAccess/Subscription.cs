@@ -1,12 +1,9 @@
 ﻿using Benday.Presidents.Api.Models;
-using System;
-using System.Linq;
 
-namespace Benday.Presidents.Api.DataAccess
+namespace Benday.Presidents.Api.DataAccess;
+
+public class Subscription : Int32Identity
 {
-    public class Subscription : Int32Identity
-    {
-        public string Username { get; set; }
-        public string SubscriptionLevel { get; set; }
-    }
+    public string Username { get; set; }
+    public string SubscriptionLevel { get; set; }
 }

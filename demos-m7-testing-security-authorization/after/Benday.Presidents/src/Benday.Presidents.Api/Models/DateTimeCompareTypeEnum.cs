@@ -1,8 +1,7 @@
-namespace Benday.Presidents.Api.Models
+namespace Benday.Presidents.Api.Models;
+
+public enum DateTimeCompareTypeEnum
 {
-    public enum DateTimeCompareTypeEnum
-    {
-        GreaterThan,
-        LessThan
-    }
+    GreaterThan,
+    LessThan
 }

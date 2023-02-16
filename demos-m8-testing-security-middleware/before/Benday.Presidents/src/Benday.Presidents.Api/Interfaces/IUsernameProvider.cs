@@ -1,10 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿
+namespace Benday.Presidents.Api.Interfaces;
 
-namespace Benday.Presidents.Api.Interfaces
+public interface IUsernameProvider
 {
-    public interface IUsernameProvider
-    {
-        string GetUsername();
-    }
+    string GetUsername();
 }

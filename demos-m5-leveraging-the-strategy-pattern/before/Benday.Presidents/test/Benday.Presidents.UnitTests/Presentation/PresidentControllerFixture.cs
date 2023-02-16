@@ -1,165 +1,158 @@
-﻿using Benday.Presidents.Api.Services;
-using Benday.Presidents.WebUI.Controllers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Benday.Presidents.Api.Models;
+using Benday.Presidents.WebUI.Controllers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Benday.Presidents.UnitTests.Presentation
+namespace Benday.Presidents.UnitTests.Presentation;
+
+[TestClass]
+public class PresidentControllerFixture
 {
-    [TestClass]
-    public class PresidentControllerFixture
+    [TestInitialize]
+    public void OnTestInitialize()
     {
-        [TestInitialize]
-        public void OnTestInitialize()
-        {
-            _SystemUnderTest = null;
-            _PresidentServiceInstance = null;
-        }
+        _SystemUnderTest = null;
+        _PresidentServiceInstance = null;
+    }
 
-        private PresidentController _SystemUnderTest;
+    private PresidentController _SystemUnderTest;
 
-        private PresidentController SystemUnderTest
+    private PresidentController SystemUnderTest
+    {
+        get
         {
-            get
+            if (_SystemUnderTest == null)
             {
-                if (_SystemUnderTest == null)
-                {
-                    _SystemUnderTest = new PresidentController(
-                        PresidentServiceInstance
-                        );
-                }
-
-                return _SystemUnderTest;
+                _SystemUnderTest = new PresidentController(
+                    PresidentServiceInstance
+                    );
             }
-        }
 
-        private MockPresidentService _PresidentServiceInstance;
-        public MockPresidentService PresidentServiceInstance
+            return _SystemUnderTest;
+        }
+    }
+
+    private MockPresidentService _PresidentServiceInstance;
+    public MockPresidentService PresidentServiceInstance
+    {
+        get
         {
-            get
+            if (_PresidentServiceInstance == null)
             {
-                if (_PresidentServiceInstance == null)
-                {
-                    _PresidentServiceInstance = new MockPresidentService();
-                }
-
-                return _PresidentServiceInstance;
+                _PresidentServiceInstance = new MockPresidentService();
             }
+
+            return _PresidentServiceInstance;
         }
+    }
 
-        [TestMethod]
-        public void WhenIndexIsCalledThenAllPresidentsAreReturned()
-        {
-            PresidentServiceInstance.GetPresidentsReturnValue.Add(
-                UnitTestUtility.GetGroverClevelandAsPresident(true)
-                );
+    [TestMethod]
+    public void WhenIndexIsCalledThenAllPresidentsAreReturned()
+    {
+        PresidentServiceInstance.GetPresidentsReturnValue.Add(
+            UnitTestUtility.GetGroverClevelandAsPresident(true)
+            );
 
-            PresidentServiceInstance.GetPresidentsReturnValue.Add(
-                UnitTestUtility.GetThomasJeffersonAsPresident(true)
-                );
+        PresidentServiceInstance.GetPresidentsReturnValue.Add(
+            UnitTestUtility.GetThomasJeffersonAsPresident(true)
+            );
 
-            var model = 
-                UnitTestUtility.GetModel<IList<President>>(
-                    SystemUnderTest.Index());
+        var model =
+            UnitTestUtility.GetModel<IList<President>>(
+                SystemUnderTest.Index());
 
-            Assert.IsNotNull(model, "Model was null.");
+        Assert.IsNotNull(model, "Model was null.");
 
-            Assert.AreNotEqual<int>(0, model.Count, "Model count was wrong.");
-        }
+        Assert.AreNotEqual<int>(0, model.Count, "Model count was wrong.");
+    }
 
-        [TestMethod]
-        public void WhenDetailsIsCalledForValidPresidentIdThenPresidentIsReturned()
-        {
-            var expected = UnitTestUtility.GetGroverClevelandAsPresident(true);
+    [TestMethod]
+    public void WhenDetailsIsCalledForValidPresidentIdThenPresidentIsReturned()
+    {
+        var expected = UnitTestUtility.GetGroverClevelandAsPresident(true);
 
-            PresidentServiceInstance.GetPresidentByIdReturnValue =
-                expected;
+        PresidentServiceInstance.GetPresidentByIdReturnValue =
+            expected;
 
-            var model =
-                UnitTestUtility.GetModel<President>(
-                    SystemUnderTest.Details(1234));
-
-            Assert.IsNotNull(model, "Model was null.");
-
-            Assert.AreSame(expected, model);
-        }
-
-        [TestMethod]
-        public void WhenDetailsIsCalledForUnknownPresidentIdThenHttpNotFoundReturned()
-        {
-            PresidentServiceInstance.GetPresidentByIdReturnValue = null;
-
-            UnitTestUtility.AssertIsHttpNotFound(
+        var model =
+            UnitTestUtility.GetModel<President>(
                 SystemUnderTest.Details(1234));
-        }
 
-        [TestMethod]
-        public void WhenEditIsCalledForLoadForValidPresidentIdThenPresidentIsReturned()
-        {
-            var expected = UnitTestUtility.GetGroverClevelandAsPresident(true);
+        Assert.IsNotNull(model, "Model was null.");
 
-            PresidentServiceInstance.GetPresidentByIdReturnValue =
-                expected;
+        Assert.AreSame(expected, model);
+    }
 
-            var model =
-                UnitTestUtility.GetModel<President>(
-                    SystemUnderTest.Edit(1234));
+    [TestMethod]
+    public void WhenDetailsIsCalledForUnknownPresidentIdThenHttpNotFoundReturned()
+    {
+        PresidentServiceInstance.GetPresidentByIdReturnValue = null;
 
-            Assert.IsNotNull(model, "Model was null.");
+        UnitTestUtility.AssertIsHttpNotFound(
+            SystemUnderTest.Details(1234));
+    }
 
-            Assert.AreSame(expected, model);
-        }
+    [TestMethod]
+    public void WhenEditIsCalledForLoadForValidPresidentIdThenPresidentIsReturned()
+    {
+        var expected = UnitTestUtility.GetGroverClevelandAsPresident(true);
 
-        [TestMethod]
-        public void WhenEditIsCalledForLoadForCreateNewPresidentThenThereIsAnEmptyPresidentRow()
-        {
-            var model =
-                UnitTestUtility.GetModel<President>(
-                    SystemUnderTest.Edit(0));
+        PresidentServiceInstance.GetPresidentByIdReturnValue =
+            expected;
 
-            Assert.IsNotNull(model, "Model was null.");
+        var model =
+            UnitTestUtility.GetModel<President>(
+                SystemUnderTest.Edit(1234));
 
-            Assert.AreEqual<int>(1, model.Terms.Count, "Term count should be 1");
+        Assert.IsNotNull(model, "Model was null.");
 
-            Assert.AreEqual<string>("President", model.Terms[0].Role, "Role was wrong.");
-        }
+        Assert.AreSame(expected, model);
+    }
 
-        [TestMethod]
-        public void WhenEditIsCalledForSaveThenPresidentIsSaved()
-        {
-            var saveThis = UnitTestUtility.GetGroverClevelandAsPresident(true);
+    [TestMethod]
+    public void WhenEditIsCalledForLoadForCreateNewPresidentThenThereIsAnEmptyPresidentRow()
+    {
+        var model =
+            UnitTestUtility.GetModel<President>(
+                SystemUnderTest.Edit(0));
 
-            PresidentServiceInstance.GetPresidentByIdReturnValue =
-                saveThis;
+        Assert.IsNotNull(model, "Model was null.");
 
-            var result = SystemUnderTest.Edit(saveThis) as RedirectToActionResult;
+        Assert.AreEqual<int>(1, model.Terms.Count, "Term count should be 1");
 
-            Assert.IsNotNull(result);
+        Assert.AreEqual<string>("President", model.Terms[0].Role, "Role was wrong.");
+    }
 
-            Assert.IsNotNull(PresidentServiceInstance.SavePresidentArgumentValue, 
-                "Service.Save() was not called with a non-null value.");
-        }
+    [TestMethod]
+    public void WhenEditIsCalledForSaveThenPresidentIsSaved()
+    {
+        var saveThis = UnitTestUtility.GetGroverClevelandAsPresident(true);
 
-        [TestMethod]
-        public void WhenEditIsCalledForSaveNewPresidentThenPresidentIsSaved()
-        {
-            // unsaved
-            var saveThis = UnitTestUtility.GetGroverClevelandAsPresident();
+        PresidentServiceInstance.GetPresidentByIdReturnValue =
+            saveThis;
 
-            PresidentServiceInstance.GetPresidentByIdReturnValue = null;
+        var result = SystemUnderTest.Edit(saveThis) as RedirectToActionResult;
 
-            var result = SystemUnderTest.Edit(saveThis);
+        Assert.IsNotNull(result);
 
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
+        Assert.IsNotNull(PresidentServiceInstance.SavePresidentArgumentValue,
+            "Service.Save() was not called with a non-null value.");
+    }
 
-            Assert.IsNotNull(PresidentServiceInstance.SavePresidentArgumentValue,
-                "Service.Save() was not called with a non-null value.");
-        }
+    [TestMethod]
+    public void WhenEditIsCalledForSaveNewPresidentThenPresidentIsSaved()
+    {
+        // unsaved
+        var saveThis = UnitTestUtility.GetGroverClevelandAsPresident();
+
+        PresidentServiceInstance.GetPresidentByIdReturnValue = null;
+
+        var result = SystemUnderTest.Edit(saveThis);
+
+        Assert.IsNotNull(result);
+        Assert.IsInstanceOfType(result, typeof(ViewResult));
+
+        Assert.IsNotNull(PresidentServiceInstance.SavePresidentArgumentValue,
+            "Service.Save() was not called with a non-null value.");
     }
 }
