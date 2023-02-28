@@ -1,61 +1,56 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Benday.Presidents.Api.Services;
-using Microsoft.AspNetCore.Http;
 
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public class PopulateSubscriptionClaimsMiddleware : IMiddleware
 {
-    public class PopulateSubscriptionClaimsMiddleware : IMiddleware
+    private ISubscriptionService _SubscriptionService;
+
+    public PopulateSubscriptionClaimsMiddleware(
+        ISubscriptionService subscriptionServiceInstance)
     {
-        private ISubscriptionService _SubscriptionService;
+        _SubscriptionService = subscriptionServiceInstance;
+    }
 
-        public PopulateSubscriptionClaimsMiddleware(
-            ISubscriptionService subscriptionServiceInstance)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        if (context.User != null &&
+            context.User.HasClaim(
+                c => c.Type == ClaimTypes.Name) == true)
         {
-            _SubscriptionService = subscriptionServiceInstance;
-        }
+            var usernameClaim =
+                context.User.Claims.Where(
+                    c => c.Type == ClaimTypes.Name).FirstOrDefault();
 
-        public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-        {
-            if (context.User != null &&
-                context.User.HasClaim(
-                    c => c.Type == ClaimTypes.Name) == true)
+            var username = usernameClaim.Value;
+
+            var subscriptionType =
+                _SubscriptionService.GetSubscriptionType(
+                    username);
+
+            if (subscriptionType != null)
             {
-                var usernameClaim = 
-                    context.User.Claims.Where(
-                        c => c.Type == ClaimTypes.Name).FirstOrDefault();
+                var claims = new List<Claim>();
 
-                var username = usernameClaim.Value;
-                
-                var subscriptionType =
-                    _SubscriptionService.GetSubscriptionType(
-                        username);                
+                // copy the existing claims
+                claims.AddRange(context.User.Claims);
 
-                if (subscriptionType != null)
-                {
-                    var claims = new List<Claim>();
+                AddClaim(claims,
+                    SecurityConstants.Claim_SubscriptionType,
+                    subscriptionType);
 
-                    // copy the existing claims
-                    claims.AddRange(context.User.Claims);
+                var identity = new ClaimsIdentity(claims);
 
-                    AddClaim(claims, 
-                        SecurityConstants.Claim_SubscriptionType, 
-                        subscriptionType);
-
-                    var identity = new ClaimsIdentity(claims);
-
-                    context.User = new System.Security.Claims.ClaimsPrincipal(identity);
-                }
+                context.User = new System.Security.Claims.ClaimsPrincipal(identity);
             }
-                        
-            await next(context);
         }
 
-        private static void AddClaim(List<Claim> claims, string claimTypeName, string value)
-        {
-            claims.Add(new Claim(claimTypeName, value));
-        }
+        await next(context);
+    }
+
+    private static void AddClaim(List<Claim> claims, string claimTypeName, string value)
+    {
+        claims.Add(new Claim(claimTypeName, value));
     }
 }

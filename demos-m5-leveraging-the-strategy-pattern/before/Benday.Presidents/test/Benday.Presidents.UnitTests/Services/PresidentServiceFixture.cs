@@ -1,398 +1,394 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Benday.Presidents.Api.Services;
 using Benday.Presidents.Api.Models;
 using Benday.Presidents.Api;
-using System.Collections.Generic;
 using Benday.Presidents.Api.DataAccess;
 
-namespace Benday.Presidents.UnitTests.Services
+namespace Benday.Presidents.UnitTests.Services;
+
+[TestClass]
+public class PresidentServiceFixture
 {
-    [TestClass]
-    public class PresidentServiceFixture
+    [TestInitialize]
+    public void OnTestInitialize()
     {
-        [TestInitialize]
-        public void OnTestInitialize()
-        {
-            _SystemUnderTest = null;
-            _PersonRepositoryInstance = null;
-            _ValidatorStrategyInstance = null;
-        }
+        _SystemUnderTest = null;
+        _PersonRepositoryInstance = null;
+        _ValidatorStrategyInstance = null;
+    }
 
-        private PresidentService _SystemUnderTest;
+    private PresidentService _SystemUnderTest;
 
-        private PresidentService SystemUnderTest
+    private PresidentService SystemUnderTest
+    {
+        get
         {
-            get
+            if (_SystemUnderTest == null)
             {
-                if (_SystemUnderTest == null)
-                {
-                    _SystemUnderTest = 
-                        new PresidentService(
-                            PersonRepositoryInstance,
-                            ValidatorStrategyInstance);
-                }
-
-                return _SystemUnderTest;
+                _SystemUnderTest =
+                    new PresidentService(
+                        PersonRepositoryInstance,
+                        ValidatorStrategyInstance);
             }
+
+            return _SystemUnderTest;
         }
+    }
 
-        private MockPresidentValidatorStrategy _ValidatorStrategyInstance;
-        public MockPresidentValidatorStrategy ValidatorStrategyInstance
+    private MockPresidentValidatorStrategy _ValidatorStrategyInstance;
+    public MockPresidentValidatorStrategy ValidatorStrategyInstance
+    {
+        get
         {
-            get
+            if (_ValidatorStrategyInstance == null)
             {
-                if (_ValidatorStrategyInstance == null)
-                {
-                    _ValidatorStrategyInstance = new MockPresidentValidatorStrategy();
-                }
-
-                return _ValidatorStrategyInstance;
+                _ValidatorStrategyInstance = new MockPresidentValidatorStrategy();
             }
+
+            return _ValidatorStrategyInstance;
         }
-        
+    }
 
-        private InMemoryRepository<Person> _PersonRepositoryInstance;
-        public InMemoryRepository<Person> PersonRepositoryInstance
+
+    private InMemoryRepository<Person> _PersonRepositoryInstance;
+    public InMemoryRepository<Person> PersonRepositoryInstance
+    {
+        get
         {
-            get
+            if (_PersonRepositoryInstance == null)
             {
-                if (_PersonRepositoryInstance == null)
-                {
-                    _PersonRepositoryInstance = new InMemoryRepository<Person>();
-                }
-
-                return _PersonRepositoryInstance;
+                _PersonRepositoryInstance = new InMemoryRepository<Person>();
             }
+
+            return _PersonRepositoryInstance;
         }
+    }
 
 
-        private void PopulateRepositoryWithTestData()
+    private void PopulateRepositoryWithTestData()
+    {
+        PersonRepositoryInstance.Save(UnitTestUtility.GetGroverClevelandAsPerson(true));
+        PersonRepositoryInstance.Save(UnitTestUtility.GetThomasJeffersonAsPerson());
+
+        var personWithNoFacts = new Person()
         {
-            PersonRepositoryInstance.Save(UnitTestUtility.GetGroverClevelandAsPerson(true));
-            PersonRepositoryInstance.Save(UnitTestUtility.GetThomasJeffersonAsPerson());
+            FirstName = "Skippy",
+            LastName = "DefinitelyNotPresident"
+        };
+        PersonRepositoryInstance.Save(personWithNoFacts);
 
-            var personWithNoFacts = new Person()
-            {
-                FirstName = "Skippy",
-                LastName = "DefinitelyNotPresident"
-            };
-            PersonRepositoryInstance.Save(personWithNoFacts);
-
-            var personWhoWasVP = new Person()
-            {
-                FirstName = "Al",
-                LastName = "Gore"
-            };
-
-            personWhoWasVP.AddFact(PresidentsConstants.VicePresident, 
-                new DateTime(1992, 1, 1), 
-                new DateTime(2000, 1, 1));
-
-            PersonRepositoryInstance.Save(personWhoWasVP);
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void GivenAnInvalidPresidentWhenSaveIsCalledThenThrowAnException()
+        var personWhoWasVP = new Person()
         {
-            ValidatorStrategyInstance.IsValidReturnValue = false;
+            FirstName = "Al",
+            LastName = "Gore"
+        };
 
-            SystemUnderTest.Save(new President());
-        }
+        personWhoWasVP.AddFact(PresidentsConstants.VicePresident,
+            new DateTime(1992, 1, 1),
+            new DateTime(2000, 1, 1));
 
-        [TestMethod]
-        public void GetAllPresidentsOnlyReturnsPresidents()
-        {
-            PopulateRepositoryWithTestData();
+        PersonRepositoryInstance.Save(personWhoWasVP);
+    }
 
-            IList<President> actual = SystemUnderTest.GetPresidents();
+    [TestMethod]
+    [ExpectedException(typeof(InvalidOperationException))]
+    public void GivenAnInvalidPresidentWhenSaveIsCalledThenThrowAnException()
+    {
+        ValidatorStrategyInstance.IsValidReturnValue = false;
 
-            Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");
+        SystemUnderTest.Save(new President());
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void GetAllPresidentsOnlyReturnsPresidents()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-            Assert.IsTrue(lastNames.Contains("Jefferson"));
-        }
+        IList<President> actual = SystemUnderTest.GetPresidents();
 
-        [TestMethod]
-        public void SearchByFirstName()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("Grover", String.Empty);
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+        Assert.IsTrue(lastNames.Contains("Jefferson"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByFirstName()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("Grover", String.Empty);
 
-        [TestMethod]
-        public void SearchByFirstNamePartial()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("ove", String.Empty);
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByFirstNamePartial()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("ove", String.Empty);
 
-        [TestMethod]
-        public void SearchByLastName()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search(String.Empty, "Cleveland");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByLastName()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search(String.Empty, "Cleveland");
 
-        [TestMethod]
-        public void SearchByLastNamePartial()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search(String.Empty, "eve");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByLastNamePartial()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search(String.Empty, "eve");
 
-        [TestMethod]
-        public void SearchByFirstNameLastName()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("Grover", "Cleveland");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByFirstNameLastName()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("Grover", "Cleveland");
 
-        [TestMethod]
-        public void SearchByFirstNameLastNamePartial()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("ove", "eve");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByFirstNameLastNamePartial()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("ove", "eve");
 
-        [TestMethod]
-        public void SearchByFirstNameLastNameCaseInsensitive()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("grover", "cleveland");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByFirstNameLastNameCaseInsensitive()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("grover", "cleveland");
 
-        [TestMethod]
-        public void SearchByPartialFirstNameLastName()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search("Gro", "Cle");
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-            var lastNames =
-                (from temp in actual
-                 select temp.LastName).ToList();
+    [TestMethod]
+    public void SearchByPartialFirstNameLastName()
+    {
+        PopulateRepositoryWithTestData();
 
-            Assert.IsTrue(lastNames.Contains("Cleveland"));
-        }
+        IList<President> actual = SystemUnderTest.Search("Gro", "Cle");
 
-        [TestMethod]
-        public void SearchByEmptyFirstNameLastNameReturnsAll()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreEqual<int>(1, actual.Count, "Wrong number of presidents.");
 
-            IList<President> actual = SystemUnderTest.Search(
-                String.Empty, String.Empty);
+        var lastNames =
+            (from temp in actual
+             select temp.LastName).ToList();
 
-            Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");            
-        }
+        Assert.IsTrue(lastNames.Contains("Cleveland"));
+    }
 
-        [TestMethod]
-        public void SearchByNullFirstNameLastNameReturnsAll()
-        {
-            PopulateRepositoryWithTestData();
+    [TestMethod]
+    public void SearchByEmptyFirstNameLastNameReturnsAll()
+    {
+        PopulateRepositoryWithTestData();
 
-            IList<President> actual = SystemUnderTest.Search(
-                null, null);
+        IList<President> actual = SystemUnderTest.Search(
+            String.Empty, String.Empty);
 
-            Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");
-        }
+        Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");
+    }
 
-        [TestMethod]
-        public void SearchByBogusFirstNameLastNameReturnsNoResults()
-        {
-            PopulateRepositoryWithTestData();
+    [TestMethod]
+    public void SearchByNullFirstNameLastNameReturnsAll()
+    {
+        PopulateRepositoryWithTestData();
 
-            IList<President> actual = SystemUnderTest.Search("Thomas", "Cleveland");
+        IList<President> actual = SystemUnderTest.Search(
+            null, null);
 
-            Assert.AreEqual<int>(0, actual.Count, "Wrong number of presidents.");
-        }
+        Assert.AreEqual<int>(2, actual.Count, "Wrong number of presidents.");
+    }
 
-        [TestMethod]
-        public void WhenSaveIsCalledThenIdIsNotZeroAndIsInRepository()
-        {
-            President saveThis = UnitTestUtility.GetGroverClevelandAsPresident();
+    [TestMethod]
+    public void SearchByBogusFirstNameLastNameReturnsNoResults()
+    {
+        PopulateRepositoryWithTestData();
 
-            SystemUnderTest.Save(saveThis);
+        IList<President> actual = SystemUnderTest.Search("Thomas", "Cleveland");
 
-            Assert.AreNotEqual<int>(0, saveThis.Id, "Id should not be zero after save.");
+        Assert.AreEqual<int>(0, actual.Count, "Wrong number of presidents.");
+    }
 
-            var actual = PersonRepositoryInstance.GetById(saveThis.Id);
+    [TestMethod]
+    public void WhenSaveIsCalledThenIdIsNotZeroAndIsInRepository()
+    {
+        President saveThis = UnitTestUtility.GetGroverClevelandAsPresident();
 
-            Assert.IsNotNull(actual, "Person wasn't saved to repository.");
-        }
+        SystemUnderTest.Save(saveThis);
 
-        [TestMethod]
-        public void WhenSaveIsCalledUsingAnExistingPresidentModificationsAreSavedInRepository()
-        {
-            PopulateRepositoryWithTestData();
+        Assert.AreNotEqual<int>(0, saveThis.Id, "Id should not be zero after save.");
 
-            Person existingPerson = GetPresidentByNameFromTestRepository("Cleveland");
+        var actual = PersonRepositoryInstance.GetById(saveThis.Id);
 
-            President existingPresident = SystemUnderTest.GetPresidentById(existingPerson.Id);
+        Assert.IsNotNull(actual, "Person wasn't saved to repository.");
+    }
 
-            ModifyValues(existingPresident);
+    [TestMethod]
+    public void WhenSaveIsCalledUsingAnExistingPresidentModificationsAreSavedInRepository()
+    {
+        PopulateRepositoryWithTestData();
 
-            SystemUnderTest.Save(existingPresident);
+        Person existingPerson = GetPresidentByNameFromTestRepository("Cleveland");
 
-            UnitTestUtility.AssertAreEqual(existingPresident, existingPerson);
-        }
+        President existingPresident = SystemUnderTest.GetPresidentById(existingPerson.Id);
 
-        [TestMethod]
-        public void WhenSaveIsCalledUsingAnExistingPresidentThenDeletedTermsAreRemovedFromCollection()
-        {
-            PopulateRepositoryWithTestData();
+        ModifyValues(existingPresident);
 
-            Person existingPerson = GetPresidentByNameFromTestRepository("Cleveland");
+        SystemUnderTest.Save(existingPresident);
 
-            President existingPresident = SystemUnderTest.GetPresidentById(existingPerson.Id);
+        UnitTestUtility.AssertAreEqual(existingPresident, existingPerson);
+    }
 
-            var existingTerm0 = existingPresident.Terms[0];
+    [TestMethod]
+    public void WhenSaveIsCalledUsingAnExistingPresidentThenDeletedTermsAreRemovedFromCollection()
+    {
+        PopulateRepositoryWithTestData();
 
-            existingTerm0.IsDeleted = true;
+        Person existingPerson = GetPresidentByNameFromTestRepository("Cleveland");
 
-            SystemUnderTest.Save(existingPresident);
+        President existingPresident = SystemUnderTest.GetPresidentById(existingPerson.Id);
 
-            Assert.AreEqual<int>(1, existingPresident.Terms.Count, "Wrong number of terms.");
-            Assert.IsFalse(existingPresident.Terms.Contains(existingTerm0), "Should not contain deleted term.");
-        }
-        
-        [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void WhenSaveIsCalledUsingAPresidentWithAnInvalidIdThenAnExceptionIsThrown()
-        {
-            President presidentWithFakeId = UnitTestUtility.GetGroverClevelandAsPresident();
+        var existingTerm0 = existingPresident.Terms[0];
 
-            presidentWithFakeId.Id = 12341234;
+        existingTerm0.IsDeleted = true;
 
-            SystemUnderTest.Save(presidentWithFakeId);
-        }
+        SystemUnderTest.Save(existingPresident);
 
-        private void ModifyValues(President existingPresident)
-        {
-            existingPresident.BirthCity = "Lollipop";
-            existingPresident.BirthState = "Missouri";
+        Assert.AreEqual<int>(1, existingPresident.Terms.Count, "Wrong number of terms.");
+        Assert.IsFalse(existingPresident.Terms.Contains(existingTerm0), "Should not contain deleted term.");
+    }
 
-            existingPresident.BirthDate = new DateTime(1954, 6, 22);
-            existingPresident.DeathDate = new DateTime(1982, 11, 14);
+    [TestMethod]
+    [ExpectedException(typeof(InvalidOperationException))]
+    public void WhenSaveIsCalledUsingAPresidentWithAnInvalidIdThenAnExceptionIsThrown()
+    {
+        President presidentWithFakeId = UnitTestUtility.GetGroverClevelandAsPresident();
 
-            existingPresident.DeathCity = "Gurgle";
-            existingPresident.DeathState = "Montana";
+        presidentWithFakeId.Id = 12341234;
 
-            existingPresident.FirstName = "Grovegrove";
-            existingPresident.LastName = "Washington, Jr.";
+        SystemUnderTest.Save(presidentWithFakeId);
+    }
 
-            existingPresident.Terms[0].Start = new DateTime(1977, 8, 29);
-            existingPresident.Terms[0].End = new DateTime(1981, 5, 3);
-        }
+    private void ModifyValues(President existingPresident)
+    {
+        existingPresident.BirthCity = "Lollipop";
+        existingPresident.BirthState = "Missouri";
 
-        [TestMethod]
-        public void GetPresidentById()
-        {
-            PopulateRepositoryWithTestData();
+        existingPresident.BirthDate = new DateTime(1954, 6, 22);
+        existingPresident.DeathDate = new DateTime(1982, 11, 14);
 
-            Person expected = GetPresidentByNameFromTestRepository("Jefferson");
+        existingPresident.DeathCity = "Gurgle";
+        existingPresident.DeathState = "Montana";
 
-            President actual = SystemUnderTest.GetPresidentById(expected.Id);
+        existingPresident.FirstName = "Grovegrove";
+        existingPresident.LastName = "Washington, Jr.";
 
-            Assert.IsNotNull(actual, "Null president was returned.");
+        existingPresident.Terms[0].Start = new DateTime(1977, 8, 29);
+        existingPresident.Terms[0].End = new DateTime(1981, 5, 3);
+    }
 
-            Assert.AreEqual<int>(expected.Id, actual.Id, "Id");
-            Assert.AreEqual<string>(expected.LastName, actual.LastName, "LastName");
-        }
+    [TestMethod]
+    public void GetPresidentById()
+    {
+        PopulateRepositoryWithTestData();
 
-        [TestMethod]
-        public void DeletePresidentByIdRemovesPresidentFromRepository()
-        {
-            PopulateRepositoryWithTestData();
+        Person expected = GetPresidentByNameFromTestRepository("Jefferson");
 
-            Person expected = GetPresidentByNameFromTestRepository("Jefferson");
+        President actual = SystemUnderTest.GetPresidentById(expected.Id);
 
-            SystemUnderTest.DeletePresidentById(expected.Id);
+        Assert.IsNotNull(actual, "Null president was returned.");
 
-            Assert.IsNull(PersonRepositoryInstance.GetById(expected.Id),
-                "Value should have been deleted.");
-        }
+        Assert.AreEqual<int>(expected.Id, actual.Id, "Id");
+        Assert.AreEqual<string>(expected.LastName, actual.LastName, "LastName");
+    }
 
-        private Person GetPresidentByNameFromTestRepository(string lastName)
-        {
-            var match = (from temp in PersonRepositoryInstance.Items
-                         where temp.LastName == lastName
-                         select temp
-                         ).FirstOrDefault();
+    [TestMethod]
+    public void DeletePresidentByIdRemovesPresidentFromRepository()
+    {
+        PopulateRepositoryWithTestData();
 
-            return match;
-        }
+        Person expected = GetPresidentByNameFromTestRepository("Jefferson");
+
+        SystemUnderTest.DeletePresidentById(expected.Id);
+
+        Assert.IsNull(PersonRepositoryInstance.GetById(expected.Id),
+            "Value should have been deleted.");
+    }
+
+    private Person GetPresidentByNameFromTestRepository(string lastName)
+    {
+        var match = (from temp in PersonRepositoryInstance.Items
+                     where temp.LastName == lastName
+                     select temp
+                     ).FirstOrDefault();
+
+        return match;
     }
 }

@@ -2,47 +2,46 @@ using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace Benday.WebCalculator.WebUi
+namespace Benday.WebCalculator.WebUi;
+
+public static class ExtensionMethods
 {
-    public static class ExtensionMethods
+    public static void Add(this List<SelectListItem> collection, string text)
     {
-        public static void Add(this List<SelectListItem> collection, string text)
+        collection.Add(text, text, false);
+    }
+
+    public static void Add(this List<SelectListItem> collection,
+        string text, bool isSelected)
+    {
+        collection.Add(text, text, isSelected);
+    }
+
+    public static void Add(this List<SelectListItem> collection,
+        string value, string text, bool isSelected)
+    {
+        if (collection == null)
         {
-            collection.Add(text, text, false);
+            throw new ArgumentException($"{nameof(collection)} is null.", nameof(collection));
         }
 
-        public static void Add(this List<SelectListItem> collection, 
-            string text, bool isSelected)
+        if (value == null)
         {
-            collection.Add(text, text, isSelected);
+            throw new ArgumentException($"{nameof(value)} is null.", nameof(value));
         }
 
-        public static void Add(this List<SelectListItem> collection,
-            string value, string text, bool isSelected)
+        if (text == null)
         {
-            if (collection == null)
-            {
-                throw new ArgumentException($"{nameof(collection)} is null.", nameof(collection));
-            }
-
-            if (value == null)
-            {
-                throw new ArgumentException($"{nameof(value)} is null.", nameof(value));
-            }
-
-            if (text == null)
-            {
-                throw new ArgumentException($"{nameof(text)} is null.", nameof(text));
-            }
-
-            var item = new SelectListItem()
-            {
-                Value = value,
-                Text = text,
-                Selected = isSelected
-            };
-
-            collection.Add(item);
+            throw new ArgumentException($"{nameof(text)} is null.", nameof(text));
         }
+
+        var item = new SelectListItem()
+        {
+            Value = value,
+            Text = text,
+            Selected = isSelected
+        };
+
+        collection.Add(item);
     }
 }

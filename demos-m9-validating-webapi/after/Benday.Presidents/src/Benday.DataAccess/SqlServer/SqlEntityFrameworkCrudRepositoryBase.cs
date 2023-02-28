@@ -1,67 +1,63 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace Benday.DataAccess.SqlServer
+namespace Benday.DataAccess.SqlServer;
+
+public abstract class SqlEntityFrameworkCrudRepositoryBase<TEntity, TDbContext> :
+    SqlEntityFrameworkRepositoryBase<TEntity, TDbContext>, IRepository<TEntity>
+    where TEntity : class, IInt32Identity
+    where TDbContext : DbContext
 {
-    public abstract class SqlEntityFrameworkCrudRepositoryBase<TEntity, TDbContext> :
-        SqlEntityFrameworkRepositoryBase<TEntity, TDbContext>, IRepository<TEntity>
-        where TEntity : class, IInt32Identity
-        where TDbContext : DbContext
+    public SqlEntityFrameworkCrudRepositoryBase(
+        TDbContext context) : base(context)
     {
-        public SqlEntityFrameworkCrudRepositoryBase(
-            TDbContext context) : base(context)
-        {
 
+    }
+
+    protected abstract DbSet<TEntity> EntityDbSet
+    {
+        get;
+    }
+
+    public virtual void Delete(TEntity deleteThis)
+    {
+        if (deleteThis == null)
+            throw new ArgumentNullException("deleteThis", "deleteThis is null.");
+
+        var entry = Context.Entry(deleteThis);
+
+        if (entry.State == EntityState.Detached)
+        {
+            EntityDbSet.Attach(deleteThis);
         }
 
-        protected abstract DbSet<TEntity> EntityDbSet
-        {
-            get;
-        }
+        EntityDbSet.Remove(deleteThis);
 
-        public virtual void Delete(TEntity deleteThis)
-        {
-            if (deleteThis == null)
-                throw new ArgumentNullException("deleteThis", "deleteThis is null.");
+        Context.SaveChanges();
+    }
 
-            var entry = Context.Entry(deleteThis);
+    public virtual IList<TEntity> GetAll()
+    {
+        return EntityDbSet.ToList();
+    }
 
-            if (entry.State == EntityState.Detached)
-            {
-                EntityDbSet.Attach(deleteThis);
-            }
+    public virtual TEntity GetById(int id)
+    {
+        return (
+            from temp in EntityDbSet
+            where temp.Id == id
+            select temp
+            ).FirstOrDefault();
+    }
 
-            EntityDbSet.Remove(deleteThis);
+    public virtual void Save(TEntity saveThis)
+    {
+        if (saveThis == null)
+            throw new ArgumentNullException("saveThis", "saveThis is null.");
 
-            Context.SaveChanges();
-        }
+        VerifyItemIsAddedOrAttachedToDbSet(
+            EntityDbSet, saveThis);
 
-        public virtual IList<TEntity> GetAll()
-        {
-            return EntityDbSet.ToList();
-        }
-
-        public virtual TEntity GetById(int id)
-        {
-            return (
-                from temp in EntityDbSet
-                where temp.Id == id
-                select temp
-                ).FirstOrDefault();
-        }
-
-        public virtual void Save(TEntity saveThis)
-        {
-            if (saveThis == null)
-                throw new ArgumentNullException("saveThis", "saveThis is null.");
-
-            VerifyItemIsAddedOrAttachedToDbSet(
-                EntityDbSet, saveThis);
-
-            Context.SaveChanges();
-        }
+        Context.SaveChanges();
     }
 }
+

@@ -1,13 +1,11 @@
-using Microsoft.AspNetCore.Builder;
 
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public static class MiddlewareExtensionMethods
 {
-    public static class MiddlewareExtensionMethods
+    public static IApplicationBuilder UsePopulateSubscriptionClaimsMiddleware(
+                this IApplicationBuilder builder)
     {
-        public static IApplicationBuilder UsePopulateSubscriptionClaimsMiddleware(
-                    this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<PopulateSubscriptionClaimsMiddleware>();
-        }
+        return builder.UseMiddleware<PopulateSubscriptionClaimsMiddleware>();
     }
 }

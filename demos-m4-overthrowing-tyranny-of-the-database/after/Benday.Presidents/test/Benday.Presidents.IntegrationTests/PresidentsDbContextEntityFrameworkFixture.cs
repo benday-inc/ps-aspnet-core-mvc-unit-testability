@@ -1,12 +1,9 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Benday.Presidents.Api.DataAccess;
-using Benday.Presidents.Api.Models;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace Benday.Presidents.IntegrationTests
-{
+namespace Benday.Presidents.IntegrationTests;
+
 
     [TestClass]
     public class PresidentsDbContextEntityFrameworkFixture
@@ -127,4 +124,3 @@ namespace Benday.Presidents.IntegrationTests
             }
         }
     }
-}

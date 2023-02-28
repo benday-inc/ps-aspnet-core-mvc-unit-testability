@@ -1,72 +1,66 @@
 ﻿using Benday.Presidents.Api.DataAccess;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Benday.Presidents.Api.Models
+namespace Benday.Presidents.Api.Models;
+
+public static class PersonExtensionMethods
 {
-    public static class PersonExtensionMethods
+    public static PersonFact GetFact(
+        this IList<PersonFact> facts,
+        string factType)
     {
-        public static PersonFact GetFact(
-            this IList<PersonFact> facts,
-            string factType)
-        {
-            var returnValue = (
-                from temp in facts
-                where temp.FactType == factType
-                select temp
-                ).FirstOrDefault();
+        var returnValue = (
+            from temp in facts
+            where temp.FactType == factType
+            select temp
+            ).FirstOrDefault();
 
-            return returnValue;
+        return returnValue;
+    }
+
+    public static IList<PersonFact> GetFacts(
+        this IList<PersonFact> facts,
+        string factType)
+    {
+        var returnValue = (
+            from temp in facts
+            where temp.FactType == factType
+            select temp
+            ).ToList();
+
+        return returnValue;
+    }
+
+    // GetFactValueAsString
+
+    public static string GetFactValueAsString(
+        this IList<PersonFact> facts,
+        string factType)
+    {
+        var temp = facts.GetFact(factType);
+
+        if (temp == null)
+        {
+            return null;
         }
-
-        public static IList<PersonFact> GetFacts(
-            this IList<PersonFact> facts,
-            string factType)
+        else
         {
-            var returnValue = (
-                from temp in facts
-                where temp.FactType == factType
-                select temp
-                ).ToList();
-
-            return returnValue;
+            return temp.FactValue;
         }
+    }
 
-        // GetFactValueAsString
+    public static DateTime GetFactValueAsDateTime(
+        this IList<PersonFact> facts,
+        string factType)
+    {
+        var temp = facts.GetFact(factType);
 
-        public static string GetFactValueAsString(
-            this IList<PersonFact> facts,
-            string factType)
+        if (temp == null)
         {
-            var temp = facts.GetFact(factType);
-
-            if (temp == null)
-            {
-                return null;
-            }
-            else
-            {
-                return temp.FactValue;
-            }
+            return default(DateTime);
         }
-
-        public static DateTime GetFactValueAsDateTime(
-            this IList<PersonFact> facts,
-            string factType)
+        else
         {
-            var temp = facts.GetFact(factType);
-
-            if (temp == null)
-            {
-                return default(DateTime);
-            }
-            else
-            {
-                return temp.StartDate;
-            }
+            return temp.StartDate;
         }
     }
 }

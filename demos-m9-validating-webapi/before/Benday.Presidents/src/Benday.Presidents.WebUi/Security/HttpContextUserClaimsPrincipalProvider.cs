@@ -1,35 +1,32 @@
-using System;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public class HttpContextUserClaimsPrincipalProvider : IUserClaimsPrincipalProvider
 {
-    public class HttpContextUserClaimsPrincipalProvider : IUserClaimsPrincipalProvider
+
+    private IHttpContextAccessor _ContextAccessor;
+
+    public HttpContextUserClaimsPrincipalProvider(IHttpContextAccessor contextAccessor)
     {
+        if (contextAccessor == null)
+            throw new ArgumentNullException(nameof(contextAccessor),
+                $"{nameof(contextAccessor)} is null.");
 
-        private IHttpContextAccessor _ContextAccessor;
+        _ContextAccessor = contextAccessor;
+    }
 
-        public HttpContextUserClaimsPrincipalProvider(IHttpContextAccessor contextAccessor)
+    public ClaimsPrincipal GetUser()
+    {
+        var context = _ContextAccessor.HttpContext;
+
+        if (context != null && context.User != null)
         {
-            if (contextAccessor == null)
-                throw new ArgumentNullException(nameof(contextAccessor),
-                    $"{nameof(contextAccessor)} is null.");
-
-            _ContextAccessor = contextAccessor;
+            return context.User;
         }
-
-        public ClaimsPrincipal GetUser()
+        else
         {
-            var context = _ContextAccessor.HttpContext;
-
-            if (context != null && context.User != null)
-            {
-                return context.User;
-            }
-            else
-            {
-                return null;
-            }
+            return null;
         }
     }
 }

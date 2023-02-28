@@ -1,137 +1,130 @@
-﻿using Benday.Presidents.Common;
-using Benday.Presidents.Api;
+﻿using Benday.Presidents.Api;
 using Benday.Presidents.Api.Models;
 using Benday.Presidents.Api.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Hosting;
+using IHostingEnvironment = Microsoft.Extensions.Hosting.IHostingEnvironment;
 
-namespace Benday.Presidents.WebUI.Controllers
+namespace Benday.Presidents.WebUI.Controllers;
+
+public class PresidentController : Controller
 {
-    public class PresidentController : Controller
+    private const int ID_FOR_CREATE_NEW_PRESIDENT = 0;
+    private IPresidentService _Service;
+
+    public PresidentController(IPresidentService service)
     {
-        private const int ID_FOR_CREATE_NEW_PRESIDENT = 0;
-        private IPresidentService _Service;
+        if (service == null)
+            throw new ArgumentNullException("service", "service is null.");
 
-        public PresidentController(IPresidentService service)
+        _Service = service;
+    }
+
+    public ActionResult Index()
+    {
+        var presidents = _Service.GetPresidents();
+
+        return View(presidents);
+    }
+
+    public ActionResult Details(int? id)
+    {
+        if (id == null || id.HasValue == false)
         {
-            if (service == null)
-                throw new ArgumentNullException("service", "service is null.");
-
-            _Service = service;
+            return new BadRequestResult();
         }
 
-        public ActionResult Index()
-        {
-            var presidents = _Service.GetPresidents();
+        var president = _Service.GetPresidentById(id.Value);
 
-            return View(presidents);
+        if (president == null)
+        {
+            return NotFound();
         }
 
-        public ActionResult Details(int? id)
+        return View(president);
+    }
+
+    public ActionResult Create()
+    {
+        return RedirectToAction("Edit", new { id = ID_FOR_CREATE_NEW_PRESIDENT });
+    }
+
+    public ActionResult Edit(int? id)
+    {
+        if (id == null)
         {
-            if (id == null || id.HasValue == false)
-            {
-                return new BadRequestResult();
-            }
-
-            var president = _Service.GetPresidentById(id.Value);
-
-            if (president == null)
-            {
-                return NotFound();
-            }            
-
-            return View(president);
+            return new BadRequestResult();
         }
 
-        public ActionResult Create()
+        President president;
+
+        if (id.Value == ID_FOR_CREATE_NEW_PRESIDENT)
         {
-            return RedirectToAction("Edit", new { id = ID_FOR_CREATE_NEW_PRESIDENT });
+            // create new
+            president = new President();
+            president.AddTerm(PresidentsConstants.President,
+                default(DateTime),
+                default(DateTime), 0);
         }
-        
-        public ActionResult Edit(int? id)
+        else
         {
-            if (id == null)
-            {
-                return new BadRequestResult();
-            }
+            president = _Service.GetPresidentById(id.Value);
+        }
 
-            President president;
+        if (president == null)
+        {
+            return NotFound();
+        }
 
-            if (id.Value == ID_FOR_CREATE_NEW_PRESIDENT)
+        return View(president);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Edit(President president)
+    {
+        if (ModelState.IsValid)
+        {
+            bool isCreateNew = false;
+
+            if (president.Id == ID_FOR_CREATE_NEW_PRESIDENT)
             {
-                // create new
-                president = new President();
-                president.AddTerm(PresidentsConstants.President, 
-                    default(DateTime), 
-                    default(DateTime), 0);
+                isCreateNew = true;
             }
             else
             {
-                president = _Service.GetPresidentById(id.Value);
-            }            
+                President toValue =
+                    _Service.GetPresidentById(president.Id);
 
-            if (president == null)
-            {
-                return NotFound();
+                if (toValue == null)
+                {
+                    return new BadRequestObjectResult(
+                        String.Format("Unknown president id '{0}'.", president.Id));
+                }
             }
 
-            return View(president);
-        }
+            _Service.Save(president);
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(President president)
-        {
-            if (ModelState.IsValid)
+            if (isCreateNew == true)
             {
-                bool isCreateNew = false;
-
-                if (president.Id == ID_FOR_CREATE_NEW_PRESIDENT)
-                {
-                    isCreateNew = true;
-                }
-                else
-                {
-                    President toValue =
-                        _Service.GetPresidentById(president.Id);
-
-                    if (toValue == null)
-                    {
-                        return new BadRequestObjectResult(
-                            String.Format("Unknown president id '{0}'.", president.Id));
-                    }
-                }
-
-                _Service.Save(president);
-
-                if (isCreateNew == true)
-                {
-                    RedirectToAction("Edit", new { id = president.Id });
-                }
-                else
-                {
-                    return RedirectToAction("Edit");
-                }                
+                RedirectToAction("Edit", new { id = president.Id });
             }
-
-            return View(president);
+            else
+            {
+                return RedirectToAction("Edit");
+            }
         }
 
-        public ActionResult ResetDatabase()
-        {
-            var utility = new TestDataUtility(_Service);
+        return View(president);
+    }
 
-            utility.CreatePresidentTestData(
-                this.HttpContext.RequestServices.GetService(typeof(IHostingEnvironment)) as IHostingEnvironment
-                );
+    public ActionResult ResetDatabase()
+    {
+        var utility = new TestDataUtility(_Service);
 
-            return RedirectToAction("Index");
-        }
+        utility.CreatePresidentTestData(
+            this.HttpContext.RequestServices.GetService(typeof(IHostingEnvironment)) as IHostingEnvironment
+            );
+
+        return RedirectToAction("Index");
     }
 }

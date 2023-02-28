@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
+namespace Benday.DataAccess;
 
-namespace Benday.DataAccess
+public interface IInt32Identity
 {
-    public interface IInt32Identity
-    {
-        int Id { get; set; }
-    }
+    int Id { get; set; }
 }
+

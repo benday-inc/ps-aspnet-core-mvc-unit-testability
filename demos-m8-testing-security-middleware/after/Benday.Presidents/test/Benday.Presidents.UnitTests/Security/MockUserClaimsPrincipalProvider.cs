@@ -1,55 +1,52 @@
 using Benday.Presidents.WebUi.Security;
-using System;
-using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace Benday.Presidents.UnitTests.Security
+namespace Benday.Presidents.UnitTests.Security;
+
+public class MockUserClaimsPrincipalProvider : IUserClaimsPrincipalProvider
 {
-    public class MockUserClaimsPrincipalProvider : IUserClaimsPrincipalProvider
+    public MockUserClaimsPrincipalProvider()
     {
-        public MockUserClaimsPrincipalProvider()
-        {
-            InitializeReturnValue();
-        }
+        InitializeReturnValue();
+    }
 
-        public ClaimsPrincipal ReturnValue { get; private set; }
+    public ClaimsPrincipal ReturnValue { get; private set; }
 
-        public ClaimsPrincipal GetUser()
-        {
-            return ReturnValue;
-        }
+    public ClaimsPrincipal GetUser()
+    {
+        return ReturnValue;
+    }
 
-        private List<Claim> _Claims;
-        private List<Claim> Claims
+    private List<Claim> _Claims;
+    private List<Claim> Claims
+    {
+        get
         {
-            get
+            if (_Claims == null)
             {
-                if (_Claims == null)
-                {
-                    _Claims = new List<Claim>();
-                }
-
-                return _Claims;
+                _Claims = new List<Claim>();
             }
+
+            return _Claims;
         }
+    }
 
-        public void AddClaim(string claimType, string claimValue)
-        {
-            Claims.Add(new Claim(claimType, claimValue));
+    public void AddClaim(string claimType, string claimValue)
+    {
+        Claims.Add(new Claim(claimType, claimValue));
 
-            InitializeReturnValue();
-        }
+        InitializeReturnValue();
+    }
 
-        private void InitializeReturnValue()
-        {
-            var identity = new ClaimsIdentity(Claims);
+    private void InitializeReturnValue()
+    {
+        var identity = new ClaimsIdentity(Claims);
 
-            ReturnValue = new ClaimsPrincipal(identity);
-        }
+        ReturnValue = new ClaimsPrincipal(identity);
+    }
 
-        internal void AddClaim(object claimsType)
-        {
-            throw new NotImplementedException();
-        }
+    internal void AddClaim(object claimsType)
+    {
+        throw new NotImplementedException();
     }
 }

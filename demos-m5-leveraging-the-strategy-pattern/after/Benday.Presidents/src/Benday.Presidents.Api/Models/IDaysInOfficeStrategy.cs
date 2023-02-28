@@ -1,9 +1,7 @@
-using System.Collections.Generic;
 
-namespace Benday.Presidents.Api.Models
+namespace Benday.Presidents.Api.Models;
+
+public interface IDaysInOfficeStrategy
 {
-    public interface IDaysInOfficeStrategy
-    {
-         int GetDaysInOffice(IEnumerable<Term> terms);
-    }
+    int GetDaysInOffice(IEnumerable<Term> terms);
 }

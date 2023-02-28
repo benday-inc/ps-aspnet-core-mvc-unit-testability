@@ -1,50 +1,47 @@
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace Benday.Presidents.Api.DataAccess
+namespace Benday.Presidents.Api.DataAccess;
+
+public class PresidentsDbContext : DbContext
 {
-    public class PresidentsDbContext : DbContext
+    public PresidentsDbContext(DbContextOptions options) :
+        base(options)
     {
-        public PresidentsDbContext(DbContextOptions options) :
-            base(options)
-        {
 
+    }
+
+    public DbSet<Person> Persons { get; set; }
+    public DbSet<PersonFact> PersonFacts { get; set; }
+
+    public override int SaveChanges()
+    {
+        CleanupOrphanedPersonFacts();
+
+        return base.SaveChanges();
+    }
+
+    private void CleanupOrphanedPersonFacts()
+    {
+        var deleteThese = new List<PersonFact>();
+
+        foreach (var deleteThis in PersonFacts.Local.Where(pf => pf.Person == null))
+        {
+            deleteThese.Add(deleteThis);
         }
 
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<PersonFact> PersonFacts { get; set; }
-
-        public override int SaveChanges()
+        foreach (var deleteThis in deleteThese)
         {
-            CleanupOrphanedPersonFacts();
-            
-            return base.SaveChanges();
+            PersonFacts.Remove(deleteThis);
         }
+    }
 
-        private void CleanupOrphanedPersonFacts()
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Person>(entity =>
         {
-            var deleteThese = new List<PersonFact>();
+            entity.ToTable("Person");
+        });
 
-            foreach (var deleteThis in PersonFacts.Local.Where(pf => pf.Person == null))
-            {
-                deleteThese.Add(deleteThis);
-            }
-
-            foreach (var deleteThis in deleteThese)
-            {
-                PersonFacts.Remove(deleteThis);
-            }
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Person>(entity =>
-            {
-                entity.ToTable("Person");
-            });
-
-            modelBuilder.Entity<PersonFact>().ToTable("PersonFact");
-        }
+        modelBuilder.Entity<PersonFact>().ToTable("PersonFact");
     }
 }

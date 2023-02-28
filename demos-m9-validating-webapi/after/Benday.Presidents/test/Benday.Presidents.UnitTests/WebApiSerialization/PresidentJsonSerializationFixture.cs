@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using System.Text;
 using Benday.Presidents.Api.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -7,112 +5,111 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace Benday.Presidents.UnitTests.WebApiSerialization
+namespace Benday.Presidents.UnitTests.WebApiSerialization;
+
+[TestClass]
+public class PresidentJsonSerializationFixture
 {
-    [TestClass]
-    public class PresidentJsonSerializationFixture
+    [TestInitialize]
+    public void OnTestInitialize()
     {
-        [TestInitialize]
-        public void OnTestInitialize()
+        _SystemUnderTest = null;
+    }
+
+    private JsonSerializer _SystemUnderTest;
+    public JsonSerializer SystemUnderTest
+    {
+        get
         {
-            _SystemUnderTest = null;
+            Assert.IsNotNull(_SystemUnderTest,
+                "Initialize hasn't been called.");
+
+            return _SystemUnderTest;
         }
+    }
 
-        private JsonSerializer _SystemUnderTest;
-        public JsonSerializer SystemUnderTest
+    private void InitializeForPascalCase()
+    {
+        _SystemUnderTest = new JsonSerializer();
+    }
+
+    private void InitializeForCamelCase()
+    {
+        var contractResolver = new DefaultContractResolver
         {
-            get
+            NamingStrategy = new CamelCaseNamingStrategy
             {
-                Assert.IsNotNull(_SystemUnderTest,
-                    "Initialize hasn't been called.");
-
-                return _SystemUnderTest;
+                OverrideSpecifiedNames = false
             }
-        }
+        };
 
-        private void InitializeForPascalCase()
-        {
-            _SystemUnderTest = new JsonSerializer();
-        }
+        _SystemUnderTest = new JsonSerializer();
+        _SystemUnderTest.ContractResolver = contractResolver;
+    }
 
-        private void InitializeForCamelCase()
-        {
-            var contractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    OverrideSpecifiedNames = false
-                }
-            };
+    [TestMethod]
+    public void TermIsDeletedIsNotSerializedIntoJson_CamelCase()
+    {
+        // arrange
+        InitializeForCamelCase();
 
-            _SystemUnderTest = new JsonSerializer();
-            _SystemUnderTest.ContractResolver = contractResolver;
-        }
+        var serializeThis =
+            UnitTestUtility.GetGroverClevelandAsPresident();
 
-        [TestMethod]
-        public void TermIsDeletedIsNotSerializedIntoJson_CamelCase()
-        {
-            // arrange
-            InitializeForCamelCase();
+        // act
+        var json = SerializeToJsonString(serializeThis);
 
-            var serializeThis =
-                UnitTestUtility.GetGroverClevelandAsPresident();
+        // assert
+        var presidentAsJson = JObject.Parse(json);
 
-            // act
-            var json = SerializeToJsonString(serializeThis);
+        var terms = presidentAsJson["terms"] as JArray;
 
-            // assert
-            var presidentAsJson = JObject.Parse(json);
+        Assert.IsNotNull(terms, "Terms was null.");
+        Assert.AreEqual<int>(2, terms.Count, "Unexpected term count.");
 
-            var terms = presidentAsJson["terms"] as JArray;
+        var term = terms[0];
 
-            Assert.IsNotNull(terms, "Terms was null.");
-            Assert.AreEqual<int>(2, terms.Count, "Unexpected term count.");
+        var isDeleted = term["isDeleted"];
 
-            var term = terms[0];
+        Assert.IsNull(isDeleted, "IsDeleted property should not exist.");
+    }
 
-            var isDeleted = term["isDeleted"];
+    [TestMethod]
+    public void TermIsDeletedIsNotSerializedIntoJson_PascalCase()
+    {
+        // arrange
+        InitializeForPascalCase();
 
-            Assert.IsNull(isDeleted, "IsDeleted property should not exist.");
-        }
+        var serializeThis =
+            UnitTestUtility.GetGroverClevelandAsPresident();
 
-        [TestMethod]
-        public void TermIsDeletedIsNotSerializedIntoJson_PascalCase()
-        {
-            // arrange
-            InitializeForPascalCase();
+        // act
+        var json = SerializeToJsonString(serializeThis);
 
-            var serializeThis =
-                UnitTestUtility.GetGroverClevelandAsPresident();
+        // assert
+        var presidentAsJson = JObject.Parse(json);
 
-            // act
-            var json = SerializeToJsonString(serializeThis);
+        var terms = presidentAsJson["Terms"] as JArray;
 
-            // assert
-            var presidentAsJson = JObject.Parse(json);
+        Assert.IsNotNull(terms, "Terms was null.");
+        Assert.AreEqual<int>(2, terms.Count, "Unexpected term count.");
 
-            var terms = presidentAsJson["Terms"] as JArray;
+        var term = terms[0];
 
-            Assert.IsNotNull(terms, "Terms was null.");
-            Assert.AreEqual<int>(2, terms.Count, "Unexpected term count.");
+        var isDeleted = term["IsDeleted"];
 
-            var term = terms[0];
+        Assert.IsNull(isDeleted, "IsDeleted property should not exist.");
+    }
 
-            var isDeleted = term["IsDeleted"];
+    private string SerializeToJsonString(President serializeThis)
+    {
+        var builder = new StringBuilder();
 
-            Assert.IsNull(isDeleted, "IsDeleted property should not exist.");
-        }
+        SystemUnderTest.Serialize(
+            new StringWriter(builder),
+            serializeThis
+        );
 
-        private string SerializeToJsonString(President serializeThis)
-        {
-            var builder = new StringBuilder();
-
-            SystemUnderTest.Serialize(
-                new StringWriter(builder),
-                serializeThis
-            );
-
-            return builder.ToString();
-        }
+        return builder.ToString();
     }
 }

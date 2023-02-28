@@ -1,36 +1,32 @@
 ﻿using Benday.Presidents.Api.Interfaces;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Benday.Presidents.Api.Services
+namespace Benday.Presidents.Api.Services;
+
+public class HttpContextUsernameProvider : IUsernameProvider
 {
-    public class HttpContextUsernameProvider : IUsernameProvider
+    private IHttpContextAccessor _ContextAccessor;
+
+    public HttpContextUsernameProvider(IHttpContextAccessor contextAccessor)
     {
-        private IHttpContextAccessor _ContextAccessor;
+        if (contextAccessor == null)
+            throw new ArgumentNullException(nameof(contextAccessor),
+                $"{nameof(contextAccessor)} is null.");
 
-        public HttpContextUsernameProvider(IHttpContextAccessor contextAccessor)
+        _ContextAccessor = contextAccessor;
+    }
+
+    public string GetUsername()
+    {
+        var context = _ContextAccessor.HttpContext;
+
+        if (context != null && context.User != null && context.User.Identity != null)
         {
-            if (contextAccessor == null)
-                throw new ArgumentNullException(nameof(contextAccessor), 
-                    $"{nameof(contextAccessor)} is null.");
-
-            _ContextAccessor = contextAccessor;
+            return context.User.Identity.Name;
         }
-
-        public string GetUsername()
+        else
         {
-            var context = _ContextAccessor.HttpContext;
-
-            if (context != null && context.User != null && context.User.Identity != null)
-            {
-                return context.User.Identity.Name;
-            }
-            else
-            {
-                return null;
-            }
+            return null;
         }
     }
 }

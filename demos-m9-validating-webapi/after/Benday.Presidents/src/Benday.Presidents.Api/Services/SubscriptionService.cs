@@ -1,84 +1,81 @@
 ﻿using Benday.Presidents.Api.DataAccess;
 using Benday.Presidents.Common;
-using System;
-using System.Linq;
 
-namespace Benday.Presidents.Api.Services
+namespace Benday.Presidents.Api.Services;
+
+public class SubscriptionService : ISubscriptionService
 {
-    public class SubscriptionService : ISubscriptionService
+    private IPresidentsDbContext _Context;
+
+    public SubscriptionService(IPresidentsDbContext context)
     {
-        private IPresidentsDbContext _Context;
-
-        public SubscriptionService(IPresidentsDbContext context)
+        if (context == null)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException("context", "Argument cannot be null.");
-            }
-
-            _Context = context;
+            throw new ArgumentNullException("context", "Argument cannot be null.");
         }
 
-        public void AddSubscription(string username, string subscriptionType)
+        _Context = context;
+    }
+
+    public void AddSubscription(string username, string subscriptionType)
+    {
+        var sub =
+            (from temp in _Context.Subscriptions
+             where temp.Username == username
+             select temp).FirstOrDefault();
+
+        if (sub == null)
         {
-            var sub =
-                (from temp in _Context.Subscriptions
-                 where temp.Username == username
-                 select temp).FirstOrDefault();
+            sub = new Subscription();
 
-            if (sub == null)
-            {
-                sub = new Subscription();
+            sub.Username = username;
 
-                sub.Username = username;
+            sub.SubscriptionLevel = subscriptionType;
 
-                sub.SubscriptionLevel = subscriptionType;
+            _Context.Subscriptions.Add(sub);
+        }
+        else
+        {
+            sub.SubscriptionLevel = subscriptionType;
+        }
 
-                _Context.Subscriptions.Add(sub);
-            }
-            else
-            {
-                sub.SubscriptionLevel = subscriptionType;
-            }
+        _Context.SaveChanges();
+    }
 
+    public void RemoveSubscription(string username)
+    {
+        var sub =
+            (from temp in _Context.Subscriptions
+             where temp.Username == username
+             select temp).FirstOrDefault();
+
+        if (sub != null)
+        {
+            _Context.Subscriptions.Remove(sub);
             _Context.SaveChanges();
         }
+    }
 
-        public void RemoveSubscription(string username)
+    public string GetSubscriptionType(string username)
+    {
+        if (String.IsNullOrWhiteSpace(username) == true)
+        {
+            return null;
+        }
+        else
         {
             var sub =
-                (from temp in _Context.Subscriptions
-                 where temp.Username == username
-                 select temp).FirstOrDefault();
+               (from temp in _Context.Subscriptions
+                where temp.Username == username
+                select temp).FirstOrDefault();
 
             if (sub != null)
             {
-                _Context.Subscriptions.Remove(sub);
-                _Context.SaveChanges();
-            }
-        }
-
-        public string GetSubscriptionType(string username)
-        {
-            if (String.IsNullOrWhiteSpace(username) == true)
-            {
-                return null;
+                return sub.SubscriptionLevel;
             }
             else
             {
-                var sub =
-                   (from temp in _Context.Subscriptions
-                    where temp.Username == username
-                    select temp).FirstOrDefault();
-
-                if (sub != null)
-                {
-                    return sub.SubscriptionLevel;
-                }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
         }
     }

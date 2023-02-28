@@ -1,8 +1,7 @@
-namespace Benday.Presidents.WebUi.Security
+namespace Benday.Presidents.WebUi.Security;
+
+public interface IUserAuthorizationStrategy
 {
-    public interface IUserAuthorizationStrategy
-    {
-        bool IsAuthorizedForSearch { get; }
-        bool IsAuthorizedForImages { get; }
-    }
+    bool IsAuthorizedForSearch { get; }
+    bool IsAuthorizedForImages { get; }
 }
